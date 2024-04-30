@@ -29,10 +29,12 @@ impl Database {
 fn main() {
     let mut db = match fs::read_to_string("./todozist.json") {
         Ok(s) => {
+            println!("load database");
             let deserialized: Database = serde_json::from_str(&s).expect("fail to parse database");
             deserialized
         }
         Err(_) => {
+            println!("create new database");
             let list: Vec<Todo> = Vec::new();
             Database {
                 owner: String::from("zhow"),
