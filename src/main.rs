@@ -1,7 +1,6 @@
 use clap::{Parser, ValueEnum};
-use fancy::printcoln;
-use serde::{Deserialize, Serialize};
 use std::fs;
+use todozist::{Database, Todo};
 
 #[derive(ValueEnum, Clone, Debug)]
 enum Action {
@@ -22,75 +21,18 @@ struct Args {
     indices: Vec<usize>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Todo {
-    done: bool,
-    description: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Database {
-    owner: String,
-    todo_list: Vec<Todo>,
-}
-
-impl Database {
-    fn display(&self) {
-        println!("owner: {}", self.owner);
-        println!("----------");
-        for (i, todo) in self.todo_list.iter().enumerate() {
-            if todo.done {
-                printcoln!("[s]{}. {}[:]", i, todo.description);
-            } else {
-                printcoln!("{}. {}", i, todo.description);
-            }
-        }
-    }
-
-    fn add_todo(&mut self, description: String) {
-        let new = Todo {
-            done: false,
-            description,
-        };
-        self.todo_list.push(new);
-    }
-
-    fn remove_todo(&mut self, indices: Vec<usize>) {
-        // self.todo_list.remove(index);
-        let mut new: Vec<Todo> = Vec::new();
-        for (i, todo) in self.todo_list.iter_mut().enumerate() {
-            if !indices.contains(&i) {
-                new.push(todo.clone())
-            }
-        }
-        self.todo_list = new;
-    }
-
-    fn done_todo(&mut self, indices: Vec<usize>) {
-        for (i, todo) in self.todo_list.iter_mut().enumerate() {
-            if indices.contains(&i) {
-                todo.done = true;
-            }
-        }
-    }
-}
-
 fn main() {
     let args = Args::parse();
-    println!("{:?}", args);
     let mut db = match fs::read_to_string("./todozist.json") {
         Ok(s) => {
-            println!("load database");
+            println!("> load database...");
             let deserialized: Database = serde_json::from_str(&s).expect("fail to parse database");
             deserialized
         }
         Err(_) => {
-            println!("create new database");
-            let list: Vec<Todo> = Vec::new();
-            Database {
-                owner: String::from("zhow"),
-                todo_list: list,
-            }
+            println!("> create new database...");
+            let todo_list: Vec<Todo> = Vec::new();
+            Database::new(todo_list)
         }
     };
     match args.action {
