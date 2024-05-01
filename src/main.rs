@@ -16,13 +16,13 @@ enum Action {
 struct Args {
     #[clap(value_enum, default_value_t = Action::List)]
     action: Action,
-    #[arg(short, long, default_value_t = String::from("none"))]
+    #[arg(short, long, default_value_t = String::from(""))]
     description: String,
-    #[arg(short, long, default_value_t = 0)]
-    index: usize,
+    #[arg(short, long, default_values_t = vec![0], value_delimiter = ' ', num_args = 1..)]
+    indices: Vec<usize>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Todo {
     done: bool,
     description: String,
@@ -55,13 +55,20 @@ impl Database {
         self.todo_list.push(new);
     }
 
-    fn remove_todo(&mut self, index: usize) {
-        self.todo_list.remove(index);
+    fn remove_todo(&mut self, indices: Vec<usize>) {
+        // self.todo_list.remove(index);
+        let mut new: Vec<Todo> = Vec::new();
+        for (i, todo) in self.todo_list.iter_mut().enumerate() {
+            if !indices.contains(&i) {
+                new.push(todo.clone())
+            }
+        }
+        self.todo_list = new;
     }
 
-    fn done_todo(&mut self, index: usize) {
+    fn done_todo(&mut self, indices: Vec<usize>) {
         for (i, todo) in self.todo_list.iter_mut().enumerate() {
-            if i == index {
+            if indices.contains(&i) {
                 todo.done = true;
             }
         }
@@ -88,8 +95,8 @@ fn main() {
     };
     match args.action {
         Action::Add => db.add_todo(args.description),
-        Action::Remove => db.remove_todo(args.index),
-        Action::Done => db.done_todo(args.index),
+        Action::Remove => db.remove_todo(args.indices),
+        Action::Done => db.done_todo(args.indices),
         Action::List => (),
     }
     db.display();
