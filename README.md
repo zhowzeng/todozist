@@ -2,7 +2,8 @@
 
 ## The Todo list of todozist
 
-- [ ] Store todo in JSON
-- [ ] Use `clap` to parse arguments
-- [ ] User can list/add/edit/remove todo
-- [ ] User can mark todo as "done"
+- [x] Store todo in JSON
+- [x] Use `clap` to parse arguments
+- [x] User can list/add/edit/remove todo
+- [x] User can mark todo as "done"
+- [ ] Parse file/directory to create todos

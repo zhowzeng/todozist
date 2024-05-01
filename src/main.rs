@@ -1,4 +1,5 @@
 use clap::{Parser, ValueEnum};
+use fancy::printcoln;
 use serde::{Deserialize, Serialize};
 use std::fs;
 
@@ -13,18 +14,16 @@ enum Action {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    // #[arg(short, long)]
-    #[clap(value_enum)]
+    #[clap(value_enum, default_value_t = Action::List)]
     action: Action,
-    #[arg(short, long)]
-    id: u8,
-    #[arg(short, long)]
+    #[arg(short, long, default_value_t = String::from("none"))]
     description: String,
+    #[arg(short, long, default_value_t = 0)]
+    index: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Todo {
-    id: u8,
     done: bool,
     description: String,
 }
@@ -38,11 +37,32 @@ struct Database {
 impl Database {
     fn display(&self) {
         println!("owner: {}", self.owner);
-        for todo in self.todo_list.iter() {
+        println!("----------");
+        for (i, todo) in self.todo_list.iter().enumerate() {
             if todo.done {
-                println!("[x] {}) {}", todo.id, todo.description);
+                printcoln!("[s]{}. {}[:]", i, todo.description);
             } else {
-                println!("[ ] {}) {}", todo.id, todo.description);
+                printcoln!("{}. {}", i, todo.description);
+            }
+        }
+    }
+
+    fn add_todo(&mut self, description: String) {
+        let new = Todo {
+            done: false,
+            description,
+        };
+        self.todo_list.push(new);
+    }
+
+    fn remove_todo(&mut self, index: usize) {
+        self.todo_list.remove(index);
+    }
+
+    fn done_todo(&mut self, index: usize) {
+        for (i, todo) in self.todo_list.iter_mut().enumerate() {
+            if i == index {
+                todo.done = true;
             }
         }
     }
@@ -67,25 +87,10 @@ fn main() {
         }
     };
     match args.action {
-        Action::Add => {
-            let new = Todo {
-                id: args.id,
-                done: false,
-                description: args.description,
-            };
-            db.todo_list.push(new);
-        }
-        Action::Remove => {
-            db.todo_list.retain(|todo| todo.id != args.id);
-        }
-        Action::Done => {
-            for todo in db.todo_list.iter_mut() {
-                if todo.id == args.id {
-                    todo.done = true;
-                }
-            }
-        }
-        _ => {}
+        Action::Add => db.add_todo(args.description),
+        Action::Remove => db.remove_todo(args.index),
+        Action::Done => db.done_todo(args.index),
+        Action::List => (),
     }
     db.display();
     let serialized = serde_json::to_string_pretty(&db).unwrap();
